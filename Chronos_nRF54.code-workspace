@@ -1,0 +1,13 @@
+{
+	"folders": [
+		{
+			"name": "Chronos_BareMetalRev2",
+			"path": "../Chronos_BareMetalRev2"
+		}
+	],
+	"settings": {
+		"nrf-connect.applications": [
+			"c:\\CodeRepos\\Chronos_BareMetalRev2"
+		]
+	}
+}
