@@ -69,7 +69,7 @@ static void init_pins(void) {
     nrf_gpio_cfg_output(NRF_GPIO_PIN_MAP(2, 10));
     nrf_gpio_pin_set(NRF_GPIO_PIN_MAP(2, 10));  // Set high (inactive)
     
-    // Switch GPIOs (DAC1/2 → switch): all 0 at init
+    // Switch GPIOs (DAC1/2 -> switch): all 0 at init
     //HCSS1
     nrf_gpio_cfg_output(NRF_GPIO_PIN_MAP(2, 7));
     nrf_gpio_pin_clear(NRF_GPIO_PIN_MAP(2, 7)); //set low (inactive)
@@ -86,5 +86,12 @@ static void init_pins(void) {
 
 int main(void)
 {
-        return 0;
+    //Begin with system initialization
+    init_clock();
+    init_pins();
+    spi_init();
+    timer_init();
+    update_pulse_width(CONFIG_PULSE_WIDTH_US);
+    update_dac1_amplitude(CONFIG_STIM_AMPLITUDE);
+    update_dac2_amplitude(CONFIG_STIM_AMPLITUDE);
 }
