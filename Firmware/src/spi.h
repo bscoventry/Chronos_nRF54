@@ -4,15 +4,15 @@
 #include <zephyr/device.h>
 #include <hal/nrf_gpio.h>
 
-#define DAC1_CS_PIN NRF_GPIO_PIN_MAP(0, 16)  // P0.16
-#define DAC2_CS_PIN NRF_GPIO_PIN_MAP(0, 26)  // P0.26
-#define DAC_TX_LEN			2
+#define DAC1_CS_PIN NRF_GPIO_PIN_MAP(2, 5)  // P2.05
+#define DAC2_CS_PIN NRF_GPIO_PIN_MAP(2, 10)  // P2.10
+#define DAC_TX_LEN			2   //2bytes
 #define DAC_RX_LEN			2
 
 #define SPIM_INST_IDX 1
-#define MOSI_PIN NRF_GPIO_PIN_MAP(0, 7)
-#define MISO_PIN NRF_GPIO_PIN_MAP(0, 25)
-#define SCK_PIN NRF_GPIO_PIN_MAP(1, 2)   //1.02
+#define MOSI_PIN NRF_GPIO_PIN_MAP(2, 2)
+#define MISO_PIN NRF_GPIO_PIN_MAP(2, 4)
+#define SCK_PIN NRF_GPIO_PIN_MAP(2, 1)   //2.01
 
 void cs_select(uint32_t pin_number);
 void cs_deselect(uint32_t pin_number);

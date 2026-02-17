@@ -94,4 +94,97 @@ int main(void)
     update_pulse_width(CONFIG_PULSE_WIDTH_US);
     update_dac1_amplitude(CONFIG_STIM_AMPLITUDE);
     update_dac2_amplitude(CONFIG_STIM_AMPLITUDE);
+
+    //If needing bluetooth set in config files
+    #if defined(CONFIG_BT)
+        update_stim_frequency(CONFIG_STIM_FREQUENCY_HZ);
+        measurement_timer_init();
+        int blink_status = 0;
+        int err = 0;
+        uint32_t experiment_counter = 0;
+
+        configure_gpio();
+        err = uart_init();
+        if (err) {
+            error();
+        }
+    #endif
+    #if defined(CONFIG_BT)
+	if (IS_ENABLED(CONFIG_BT_NUS_SECURITY_ENABLED)) {
+		err = bt_conn_auth_cb_register(&conn_auth_callbacks);
+		if (err) {
+			LOG_ERR("Failed to register authorization callbacks. (err: %d)", err);
+			return 0;
+		}
+
+		err = bt_conn_auth_info_cb_register(&conn_auth_info_callbacks);
+		if (err) {
+			LOG_ERR("Failed to register authorization info callbacks. (err: %d)", err);
+			return 0;
+		}
+	}
+
+	err = bt_enable(NULL);
+	if (err) {
+		error();
+	}
+
+	LOG_INF("Bluetooth initialized");
+
+	k_sem_give(&ble_init_ok);
+
+	if (IS_ENABLED(CONFIG_SETTINGS)) {
+		settings_load();
+	}
+
+	err = bt_nus_init(&nus_cb);
+	if (err) {
+		LOG_ERR("Failed to initialize UART service (err: %d)", err);
+		return 0;
+	}
+
+	k_work_init(&adv_work, adv_work_handler);
+	advertising_start();
+	for (;;) {
+		dk_set_led(RUN_STATUS_LED, (++blink_status) % 2);
+		k_msleep(10000);
+		if (MEASURE_TIMER == 1) {
+			experiment_counter += 10;
+			error_data my_error_data;
+			get_error_data(&my_error_data);
+			printf("Counter: %i Elapsed: %is\nEvent0 running error: %lu avg error: %lu max error: %lu\nEvents1-3 running error: %lu avg error: %lu max error: %lu, %lu, %lu\n",
+				my_error_data.mycounter,
+				experiment_counter,
+				my_error_data.event0_error,
+				(my_error_data.event0_error / my_error_data.mycounter),
+				my_error_data.event0_max,
+				my_error_data.myerror,
+				(my_error_data.myerror / my_error_data.mycounter),
+				my_error_data.event1_max,
+				my_error_data.event2_max,
+				my_error_data.event3_max);
+		}
+	}
+    #else
+        /* RTC low-power: no BLE; RTC wakes every stim period, timer runs one biphasic burst */
+        rtc_stim_start_lfclk();
+        rtc_stim_init(CONFIG_STIM_FREQUENCY_HZ);
+        LOG_INF("RTC-driven stimulation at %u Hz (no BLE)", CONFIG_STIM_FREQUENCY_HZ);
+        for (;;) {
+            k_sleep(K_FOREVER);
+        }
+    #endif /* CONFIG_BT */
+    }
+
+    K_THREAD_DEFINE(ble_write_thread_id, STACKSIZE, ble_write_thread, NULL, NULL,
+            NULL, PRIORITY, 0, 0);
+
+    static void init_clock() {
+        // select the clock source: HFINT (high frequency internal oscillator) or HFXO (external 32 MHz crystal)
+        NRF_CLOCK_S->HFCLKSRC = (CLOCK_HFCLKSRC_SRC_HFINT << CLOCK_HFCLKSRC_SRC_Pos);
+
+        // start the clock, and wait to verify that it is running
+        NRF_CLOCK_S->TASKS_HFCLKSTART = 1;
+        while (NRF_CLOCK_S->EVENTS_HFCLKSTARTED == 0);
+        NRF_CLOCK_S->EVENTS_HFCLKSTARTED = 0;
 }
